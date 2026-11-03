@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827">
+  <title> AR — Virtual Furniture Placement</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="RoomVista home">
+        <span class="brand-mark">⌂</span>
+        <span><b>AR</b><small>AR FURNITURE PLACEMENT</small></span>
+      </a>
+      <div class="top-actions">
+        <span class="status-pill"><i></i><span id="statusText">Studio ready</span></span>
+        <button class="icon-button" id="helpBtn" title="Help" aria-label="Help">?</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="stage-column">
+        <div class="stage-heading">
+          <div>
+            <p class="eyebrow">YOUR SPACE, REIMAGINED</p>
+            <h1>Design your room in AR</h1>
+            <p class="subheading">Preview furniture in your own space before you buy.</p>
+          </div>
+          <button class="text-button" id="resetBtn">↺ Reset room</button>
+        </div>
+
+        <div class="stage" id="stage">
+          <video id="cameraVideo" autoplay muted playsinline></video>
+          <div class="camera-placeholder" id="placeholder">
+            <div class="room-illustration">
+              <div class="window"></div>
+              <div class="plant-art">♧</div>
+              <div class="sofa-art"><span></span></div>
+              <div class="rug-art"></div>
+            </div>
+            <div class="placeholder-copy">
+              <span class="camera-icon">◉</span>
+              <h2>Your room is the canvas</h2>
+              <p>Start your camera to place virtual furniture in your space.</p>
+              <button class="primary-button" id="startCameraBtn">Start camera <span>→</span></button>
+            </div>
+          </div>
+          <div id="fallbackObjects" class="fallback-objects" aria-label="Furniture placed in camera view"></div>
+          <div id="threeHost" class="three-host"></div>
+          <div class="stage-topline">
+            <span class="live-badge"><i></i><span id="viewModeLabel">ROOM PREVIEW</span></span>
+            <button class="stage-control" id="switchCameraBtn" title="Switch camera"
+              aria-label="Switch camera">⟳</button>
+          </div>
+          <div class="stage-bottomline">
+            <span class="tip" id="stageTip">Tip: Select an item, then drag it into position.</span>
+            <button class="capture-button" id="captureBtn" title="Take screenshot">◎</button>
+          </div>
+          <div class="camera-error" id="cameraError" role="alert"></div>
+        </div>
+        <div class="stage-footer">
+          <span><b class="green-dot"></b> Camera stays on your device</span>
+          <span id="objectCount">0 objects placed</span>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <div class="panel-tabs"><button class="tab active" data-tab="catalog">Furniture</button><button class="tab"
+            data-tab="settings">Adjust</button></div>
+        <section class="tab-content" id="catalogTab">
+          <div class="panel-title">
+            <div>
+              <h2>Furniture library</h2>
+              <p>Choose an item to add to your room.</p>
+            </div><span class="count-badge">06</span>
+          </div>
+          <div class="category-row">
+            <button class="category active" data-filter="all">All items</button>
+            <button class="category" data-filter="seating">Seating</button>
+            <button class="category" data-filter="tables">Tables</button>
+            <button class="category" data-filter="decor">Decor</button>
+          </div>
+          <div class="furniture-grid" id="furnitureGrid"></div>
+          <div class="selected-card" id="selectedCard">
+            <div class="selected-preview" id="selectedPreview">🪑</div>
+            <div class="selected-info"><small>SELECTED ITEM</small><b id="selectedName">No item selected</b><span
+                id="selectedDescription">Choose furniture from the library.</span></div>
+            <button class="add-button" id="addFurnitureBtn" disabled>＋ Add</button>
+          </div>
+          <div class="ar-callout"><span>✦</span>
+            <div><b>Want true AR?</b>
+              <p>On supported Android phones, tap “Launch AR” to place 3D furniture on your floor.</p>
+            </div>
+          </div>
+          <button class="ar-button" id="launchARBtn">✧ Launch AR mode <span>→</span></button>
+        </section>
+
+        <section class="tab-content hidden" id="settingsTab">
+          <div class="panel-title">
+            <div>
+              <h2>Object controls</h2>
+              <p>Fine-tune your selected furniture.</p>
+            </div>
+          </div>
+          <div class="empty-selection" id="emptySelection"><span>✥</span><b>Select an object</b>
+            <p>Add furniture to your room, then select it to adjust its position and size.</p>
+          </div>
+          <div id="objectControls" class="controls hidden">
+            <div class="control-heading"><b id="controlObjectName">Furniture</b><button id="removeBtn"
+                class="remove-button">Remove</button></div>
+            <label class="range-label">Size <output id="sizeValue">100%</output></label>
+            <input type="range" id="sizeSlider" min="50" max="160" value="100">
+            <label class="range-label">Rotation <output id="rotationValue">0°</output></label>
+            <input type="range" id="rotationSlider" min="-180" max="180" value="0">
+            <div class="control-actions"><button id="sendBackBtn" class="secondary-button">Send backward</button><button
+                id="bringFrontBtn" class="secondary-button">Bring forward</button></div>
+            <p class="control-hint">Tip: Drag an object on the preview to move it.</p>
+          </div>
+          <div class="room-tools">
+            <h3>Room tools</h3><button id="clearBtn" class="wide-secondary">Clear a
+              ll furniture</button><button
+              id="downloadBtn" class="wide-secondary">Download room snapshot</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+    <footer class="footer"><span>RoomVista <b>·</b> Virtual Interior Design</span><span>Designed for mobile &
+        desktop</span></footer>
+  </div>
+
+  <div class="modal-backdrop hidden" id="helpModal">
+    <div class="help-modal"><button class="modal-close" id="closeHelp">×</button><span class="modal-icon">✦</span>
+      <h2>Welcome to RoomVista</h2>
+      <p>Build your room layout in three simple steps:</p>
+      <ol>
+        <li><b>Start the camera</b> and allow browser camera permission.</li>
+        <li><b>Choose furniture</b> from the library and press Add.</li>
+        <li><b>Arrange your room</b> by dragging, resizing, rotating or removing objects.</li>
+      </ol>
+      <p class="help-note">True 3D AR requires a supported phone/browser and an HTTPS connection (or localhost). If AR
+        is unavailable, the camera preview mode still lets you arrange furniture.</p>
+      <button class="primary-button full" id="gotItBtn">Got it</button>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script type="module" src="app.js"></script>
+</body>
+
+</html>
